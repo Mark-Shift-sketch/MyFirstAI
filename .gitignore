@@ -1,0 +1,4 @@
+__pycache__/
+*.pth
+vosk-model*
+data/
