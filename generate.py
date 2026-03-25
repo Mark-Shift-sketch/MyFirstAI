@@ -1,30 +1,51 @@
-# Script for generating text responses
+"""Utilities for runtime text generation with a reloadable LSTM backend."""
 
 import torch
 import torch.nn.functional as F
+
 from model.lstm_model import SimpleLSTM
 from utils import clean_text, create_vocab
 
-# Load data to build vocab
-with open("data/corpus.txt", "r", encoding="utf-8") as f:
-    text = clean_text(f.read())
-    
-word_to_idx, idx_to_word = create_vocab(text)
-vocab_size = len(word_to_idx)
 
-
-# Load trained model (fallback-safe)
-model = SimpleLSTM(vocab_size)
+word_to_idx = {}
+idx_to_word = {}
+model = None
 _model_ready = False
 
-try:
-    state = torch.load("model.lstm_weights.pth", map_location="cpu")
-    model.load_state_dict(state)
-    model.eval()
-    _model_ready = True
-except Exception:
-    # Keep runtime stable even when weights and vocab do not match.
+
+def _safe_corpus_text():
+    try:
+        with open("data/corpus.txt", "r", encoding="utf-8") as file_handle:
+            return clean_text(file_handle.read())
+    except OSError:
+        return ""
+
+
+def _initialize_generator():
+    global word_to_idx, idx_to_word, model, _model_ready
+
+    corpus_text = _safe_corpus_text()
+    if not corpus_text.strip():
+        corpus_text = "jarvis assistant ready to help"
+
+    word_to_idx, idx_to_word = create_vocab(corpus_text)
+    vocab_size = max(1, len(word_to_idx))
+    model = SimpleLSTM(vocab_size)
     _model_ready = False
+
+    try:
+        state = torch.load("model.lstm_weights.pth", map_location="cpu")
+        model.load_state_dict(state)
+        model.eval()
+        _model_ready = True
+    except Exception:
+        # Keep runtime stable even when weights and vocabulary mismatch.
+        _model_ready = False
+
+
+def reload_generator():
+    _initialize_generator()
+    return _model_ready
 
 def generate_text(
     start_seq,
@@ -34,6 +55,9 @@ def generate_text(
     repetition_penalty=1.1,
     context_window=20,
 ):
+    if model is None:
+        _initialize_generator()
+
     if not _model_ready:
         return "I am ready to assist."
 
@@ -79,3 +103,6 @@ def generate_text(
         return "I can assist with commands and brief answers"
 
     return output
+
+
+_initialize_generator()
