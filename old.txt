@@ -1,0 +1,8 @@
+    def _web_answer(self, user_question):
+        normalized_key = self.jarvis._normalize_qa_key(user_question)
+        if normalized_key in self.web_cache:
+            return self.web_cache[normalized_key]
+
+        query = self._normalize_web_query(user_question).strip(" ?")
+        if not query:
+            return None

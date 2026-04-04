@@ -1,0 +1,1 @@
+print('Run alembic init alembic')

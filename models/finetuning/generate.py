@@ -2,9 +2,13 @@
 
 import torch
 import torch.nn.functional as F
+import sys
+import os
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from model.lstm_model import SimpleLSTM
-from utils import clean_text, create_vocab
+from core.utils import clean_text, create_vocab
 
 
 word_to_idx = {}

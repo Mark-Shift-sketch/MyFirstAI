@@ -3,11 +3,11 @@ import re
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
 
-from data.dataset import load_dataset
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from core.data_service import load_dataset
 
 
 EVAL_PATH = Path("data/eval_prompts.jsonl")
