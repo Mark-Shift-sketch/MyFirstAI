@@ -65,6 +65,7 @@ RAG_MIN_GROUNDING_SCORE = 0.45
 class InferenceManager:
     def __init__(self, jarvis):
         self.jarvis = jarvis
+        self.brain = getattr(jarvis, "brain", None)
         self.web_cache = {}
         self.offline_knowledge = self._load_offline_knowledge()
 
@@ -76,6 +77,7 @@ class InferenceManager:
         if not normalized:
             return None
 
+        # Exact match first
         direct = self.jarvis.qa_lookup.get(normalized)
         if direct:
             return direct
@@ -88,7 +90,8 @@ class InferenceManager:
         if not self.jarvis.qa_questions:
             return None
 
-        close = difflib.get_close_matches(normalized, self.jarvis.qa_questions, n=1, cutoff=0.78)
+        # Try a close match with moderate cutoff
+        close = difflib.get_close_matches(normalized, self.jarvis.qa_questions, n=1, cutoff=0.7)
         if close:
             return self.jarvis.qa_lookup.get(close[0])
 
@@ -102,13 +105,33 @@ class InferenceManager:
                 best_score = score
                 best_key = key
 
-        if best_key and best_score >= 0.72:
+        # Slightly relax threshold to prefer local knowledge
+        if best_key and best_score >= 0.68:
             return self.jarvis.qa_lookup.get(best_key)
+
+        # Log low-confidence candidate matches for later review/training
+        try:
+            low_conf_path = Path("data/low_confidence.jsonl")
+            low_conf_path.parent.mkdir(parents=True, exist_ok=True)
+            if best_key and best_score > 0.2:
+                payload = {
+                    "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
+                    "query": text,
+                    "candidate_key": best_key,
+                    "score": best_score,
+                }
+                with low_conf_path.open("a", encoding="utf-8") as fh:
+                    fh.write(json.dumps(payload, ensure_ascii=False) + "\n")
+        except Exception:
+            pass
 
         return None
 
 
     def _semantic_qa_response(self, text):
+        if self.brain is None:
+            return None
+
         match = self.brain.get_match(text)
         if not match:
             return None
@@ -153,6 +176,9 @@ class InferenceManager:
 
     def _planner_response(self, text):
         intent = self.jarvis._detect_intent(text)
+        if self.brain is None:
+            return None
+
         matches = self.brain.get_top_matches(text, k=3, min_score=RAG_MIN_GROUNDING_SCORE)
         grounded_facts = [item.get("answer", "") for item in matches if item.get("answer")]
 

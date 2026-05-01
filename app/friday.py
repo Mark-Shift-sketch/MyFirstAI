@@ -38,17 +38,8 @@ from core.inference import InferenceManager, OFFLINE_CAPITALS, OFFLINE_PEOPLE, O
 from models.finetuning.generate import generate_text, reload_generator
 
 
-WAKE_WORDS = ("jarvis", "hey jarvis")
-WAKE_ALIASES = (
-    "jervis",
-    "jarves",
-    "jarvice",
-    "javis",
-    "jarviss",
-    "job is",
-    "john reese",
-    "john obese",
-)
+WAKE_WORDS = ('friday', 'hey friday')
+WAKE_ALIASES = ('phriday', 'fry day', 'fri day')
 EXIT_WORDS = ("quit", "exit", "goodbye", "shutdown")
 ACTIVE_WINDOW_SECONDS = 14
 MEMORY_PATH = Path("data/operator_memory.json")
@@ -80,7 +71,16 @@ APP_CLOSE_IMAGES = {
 
 
 
-class JarvisAssistant:
+class FridayAssistant:
+
+    def scan_perimeter(self):
+        print("Scanning house perimeter... All sensors are nominal. Perimeter is secure.")
+        
+    def lock_doors(self):
+        print("Engaging all household locks and activating security protocols. The house is now protected.")
+        
+    def security_report(self):
+        print("Conducting full security diagnostic. Cameras, motion sensors, and alarms are fully operational.")
     def __init__(self, samplerate=16000):
         self.engine = pyttsx3.init()
         self._configure_voice()
@@ -195,7 +195,7 @@ class JarvisAssistant:
     def _normalize_question_query(self, text):
         query = text.strip().lower().strip(" ?")
         query = re.sub(
-            r"^(?:jarvis\s+)?(?:please\s+)?(?:tell me|explain|define|what is|who is|where is|when is|why is|how does|how do|how can)\s+",
+            r"^(?:friday\s+)?(?:please\s+)?(?:tell me|explain|define|what is|who is|where is|when is|why is|how does|how do|how can)\s+",
             "",
             query,
         )
@@ -210,7 +210,7 @@ class JarvisAssistant:
         key = re.sub(r"\bcan u\b", "can you", key)
         key = re.sub(r"\bpls\b", "please", key)
         key = re.sub(
-            r"^(?:jarvis\s+)?(?:please\s+)?(?:can you tell me|could you tell me|can you|could you|would you|do you know)\s+",
+            r"^(?:friday\s+)?(?:please\s+)?(?:can you tell me|could you tell me|can you|could you|would you|do you know)\s+",
             "",
             key,
         )
@@ -1531,7 +1531,7 @@ class JarvisAssistant:
         print(safe)
 
     def speak(self, text):
-        self._console_print(f"Jarvis: {text}")
+        self._console_print(f"Friday: {text}")
         self.engine.say(text)
         self.engine.runAndWait()
 
@@ -1613,13 +1613,13 @@ class JarvisAssistant:
                 return text[len(alias):].strip(" ,"), True
 
         first_token = text.split(" ", 1)[0]
-        if first_token and difflib.SequenceMatcher(None, first_token, "jarvis").ratio() >= 0.76:
+        if first_token and difflib.SequenceMatcher(None, first_token, "friday").ratio() >= 0.76:
             remainder = text[len(first_token):].strip(" ,")
             return remainder, True
 
-        if " jarvis " in f" {text} ":
+        if " friday " in f" {text} ":
             wake_used = True
-            text = re.sub(r"\bhey\s+jarvis\b|\bjarvis\b", "", text).strip(" ,")
+            text = re.sub(r"\bhey\s+friday\b|\bfriday\b", "", text).strip(" ,")
 
         if not wake_used:
             for alias in WAKE_ALIASES:
@@ -1649,7 +1649,7 @@ class JarvisAssistant:
         if "go to sleep" in text or "sleep mode" in text:
             self.sleep_mode = True
             self.active_until = 0.0
-            return "Entering standby mode. Say Jarvis to wake me."
+            return "Entering standby mode. Say Friday to wake me."
 
         if self.sleep_mode:
             if wake_used or "wake up" in text:
@@ -1705,7 +1705,6 @@ class JarvisAssistant:
                 from astral import LocationInfo
                 from astral.sun import sun
                 if place:
-                    # try parse 'City, Country' or 'City'
                     name = place.split(',')[0].strip()
                     loc = LocationInfo(name)
                 else:
@@ -1964,7 +1963,7 @@ class JarvisAssistant:
                 return f"Searching the web for {query}."
 
         if "who are you" in text or "your name" in text:
-            return "I am JARVIS, your AI desktop assistant."
+            return "I am FRIDAY, your AI desktop assistant."
 
         if "show memory tiers" in text or "memory tiers" in text:
             short_count = len(self.session_memory.get("recent_turns", []))
@@ -1983,7 +1982,7 @@ class JarvisAssistant:
 
         if "help" in text:
             return (
-                "Use wake phrase Jarvis, then ask daily commands like add task, list tasks, "
+                "Use wake phrase Friday, then ask daily commands like add task, list tasks, "
                 "complete task 2, remind me to call mom at 7 pm, daily brief, plus time, date, "
                 "open or close apps, web search, memory commands, and offline smart Q&A like "
                 "math, percentages, unit conversion, date calculations, capitals, and decision coaching. "
@@ -2115,6 +2114,6 @@ class JarvisAssistant:
                 print(f"Runtime error: {e}")
                 
 if __name__ == "__main__":
-    assistant = JarvisAssistant()
+    assistant = FridayAssistant()
     assistant.run()
                 

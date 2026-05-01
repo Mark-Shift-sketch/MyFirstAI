@@ -3,7 +3,7 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from utils import clean_text, create_vocab, text_to_sequences
+from core.utils import clean_text, create_vocab, text_to_sequences
 from model.lstm_model import SimpleLSTM
 import numpy as np
 
